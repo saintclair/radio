@@ -12,9 +12,9 @@ var request = require('request'); // "Request" library
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
 
-var client_id = '030f78b8da65466c81664feeb953e832'; // Your client id
-var client_secret = '8a5fae0c97114d7a956c0195f68be1b2'; // Your client secret
-var redirect_uri = 'http://52.90.156.121:8888/'; // Your redirect uri
+var client_id = ''; // Your client id
+var client_secret = ''; // Your client secret
+var redirect_uri = ''; // Your redirect uri
 
 /**
  * Generates a random string containing numbers and letters
