@@ -4,6 +4,10 @@
     <title>Example of the Implicit Grant flow with Spotify</title>
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
     <style type="text/css">
+      body{
+	background: black;
+	color: green;
+      } 
       #login, #loggedin {
         display: none;
       }
@@ -19,12 +23,27 @@
   <body>
     <div class="container">
       <div id="login">
-        <h1>This is an example of the Implicit Grant flow</h1>
+        <!--This is an example of the Implicit Grant flow-->
+	<h1>Music Panel</h1>
         <button id="login-button" class="btn btn-primary">Log in with Spotify</button>
       </div>
       <div id="loggedin">
+	<div id="search-box">
+		<form>
+		    <input type="text" name="q" id="q" />
+		    <select id="tipo" name="tipo">
+			<option value="album">Album</option>
+			<option value="artist">Artist</option>
+			<option value="playlist">Playlist</option>
+			<option value="track">Track</option>
+		    </select>
+		    <a href="javascript:void(0)" id="btn-search" class="btn btn-large">Buscar</a>
+		</form>
+	</div>
         <div id="user-profile">
         </div>
+	<div id="related-artists">
+	</div>
         <div id="oauth">
         </div>
       </div>
@@ -43,12 +62,32 @@
             <dt>Email</dt><dd>{{email}}</dd>
             <dt>Spotify URI</dt><dd><a href="{{external_urls.spotify}}">{{external_urls.spotify}}</a></dd>
             <dt>Link</dt><dd><a href="{{href}}">{{href}}</a></dd>
+            <dt>Followers href</dt><dd>{{followers.href}}</dd>
+	    <dt>Followers Total</td><dd>{{followers.total}}</dd>
             <dt>Profile Image</dt><dd class="clearfix"><a href="{{images.0.url}}">{{images.0.url}}</a></dd>
             <dt>Country</dt><dd>{{country}}</dd>
+            <dt>Birthdate</dt><dd>{{birthdate}}</dd>
+	    <dt>Product</dt><dd>{{product}}</dd>
+	    <dt>Type</dt><dd>{{type}}</dd> 
+	    <dt>Uri</dt><dd>{{uri}}</dd>
           </dl>
         </div>
       </div>
     </script>
+
+    <script id="related-artists-template" type="text/x-handlebars-template">
+    <h2>Related Artists</h2>
+    <dl class="dl-horizontal">
+
+	{{#each artists}}
+	<dt>{{this.name}}</dt>
+	<dd><img src="{{this.images.0.url}}" width="80" height="80" /></dd>
+	{{/each}}
+
+<!--	<dt>Popularity</dt><dd><img src="{{artists.0.images.0.url}}" /></dd>-->
+
+    </dl>
+   </script>
 
     <script id="oauth-template" type="text/x-handlebars-template">
       <h2>oAuth info</h2>
@@ -93,9 +132,32 @@
           return text;
         };
 
+	/**
+	* Search Music by type
+	* @param {string} query
+	* @param {string} _type
+	*
+	* @return {string} json
+	*/	
+	function getMusic(q,_type){
+		$.ajax({
+			url: "https://api.spotify.com/v1/search?q="+encodeURI(q)+"&type="+encodeURI(_type),
+			success: function(music) {
+				console.log(music);
+			}
+		});
+	};
+
+
         var userProfileSource = document.getElementById('user-profile-template').innerHTML,
             userProfileTemplate = Handlebars.compile(userProfileSource),
             userProfilePlaceholder = document.getElementById('user-profile');
+
+
+	var relatedArtists = document.getElementById('related-artists-template').innerHTML,
+	    relatedArtistsTemplate = Handlebars.compile(relatedArtists),
+	    relatedArtistsPlaceholder = document.getElementById('related-artists');
+
 
             oauthSource = document.getElementById('oauth-template').innerHTML,
             oauthTemplate = Handlebars.compile(oauthSource),
@@ -112,13 +174,38 @@
         } else {
           localStorage.removeItem(stateKey);
           if (access_token) {
+
+            $('#btn-search').on('click',function(){
+                    console.log( getMusic(document.getElementById('q').value,document.getElementById('tipo').value) );
+            });
+
             $.ajax({
                 url: 'https://api.spotify.com/v1/me',
                 headers: {
                   'Authorization': 'Bearer ' + access_token
                 },
                 success: function(response) {
-                  userProfilePlaceholder.innerHTML = userProfileTemplate(response);
+		  userProfilePlaceholder.innerHTML = userProfileTemplate(response);
+
+		  // Get Playlist of user
+		  $.ajax({
+			url: 'https://api.spotify.com/v1/me/playlists',
+                	headers: {
+                  		'Authorization': 'Bearer ' + access_token
+                	},
+			success: function(pl) {
+				console.log(pl);
+			} 
+		  });
+ 
+		  // Lista Artistas relacionados ao id do artista informado		  
+		  $.ajax({
+			url: 'https://api.spotify.com/v1/artists/45InkbGypoMk5nVX6dsHkt/related-artists',
+			success: function(art) { 
+				console.log(art);
+				relatedArtistsPlaceholder.innerHTML = relatedArtistsTemplate(art);
+			} 
+		  });
 
                   $('#login').hide();
                   $('#loggedin').show();
@@ -131,13 +218,13 @@
 
           document.getElementById('login-button').addEventListener('click', function() {
 
-            var client_id = '03ffe0cac0a0401aa6673c3cf6d02ced'; // Your client id
-            var redirect_uri = 'http://localhost:8888/'; // Your redirect uri
+            var client_id = ''; // Your client id
+            var redirect_uri = ''; // Your redirect uri
 
             var state = generateRandomString(16);
 
             localStorage.setItem(stateKey, state);
-            var scope = 'user-read-private user-read-email';
+            var scope = 'user-read-email user-library-read user-read-birthdate playlist-read-private playlist-read-collaborative user-read-private';
 
             var url = 'https://accounts.spotify.com/authorize';
             url += '?response_type=token';

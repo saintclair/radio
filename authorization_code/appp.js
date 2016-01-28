@@ -14,7 +14,7 @@ var cookieParser = require('cookie-parser');
 
 var client_id = '030f78b8da65466c81664feeb953e832'; // Your client id
 var client_secret = '8a5fae0c97114d7a956c0195f68be1b2'; // Your client secret
-var redirect_uri = 'http://52.90.156.121/callback'; // Your redirect uri
+var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
 
 /**
  * Generates a random string containing numbers and letters
@@ -39,6 +39,7 @@ app.use(express.static(__dirname + '/public'))
    .use(cookieParser());
 
 app.get('/login', function(req, res) {
+
   var state = generateRandomString(16);
   res.cookie(stateKey, state);
 
@@ -55,6 +56,7 @@ app.get('/login', function(req, res) {
 });
 
 app.get('/callback', function(req, res) {
+
   // your application requests refresh and access tokens
   // after checking the state parameter
 
@@ -84,6 +86,7 @@ app.get('/callback', function(req, res) {
 
     request.post(authOptions, function(error, response, body) {
       if (!error && response.statusCode === 200) {
+
         var access_token = body.access_token,
             refresh_token = body.refresh_token;
 
@@ -115,6 +118,7 @@ app.get('/callback', function(req, res) {
 });
 
 app.get('/refresh_token', function(req, res) {
+
   // requesting access token from refresh token
   var refresh_token = req.query.refresh_token;
   var authOptions = {
